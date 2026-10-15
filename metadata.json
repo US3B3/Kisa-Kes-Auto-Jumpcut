@@ -1,5 +1,6 @@
 {
   "name": "Uskut",
   "description": "Premiere Pro için tarayıcı tabanlı sessizlik giderici ve XML oluşturucu.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }

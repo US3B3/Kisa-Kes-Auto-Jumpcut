@@ -1,6 +1,6 @@
 import { AudioSegment, ProcessingSettings } from '../types';
 // @ts-ignore
-import MP4Box from 'mp4box';
+import * as MP4Box from 'mp4box';
 
 // Define WebCodecs API types locally
 declare global {

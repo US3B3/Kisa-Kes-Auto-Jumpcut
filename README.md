@@ -17,15 +17,78 @@ Tüm işlem **istemci tarafında (tarayıcınızda)** gerçekleşir. Videoların
 *   **Premiere Pro Uyumu:** Final Cut Pro XML formatında çıktı vererek Premiere Pro ile sorunsuz çalışır.
 *   **Modern Arayüz:** React, Tailwind CSS ve Lucide ikonları ile hazırlanmış şık tasarım.
 
-## 🚀 Kurulum ve Çalıştırma
+## 🚀 Masaüstü Uygulaması Olarak Kurulum (.exe)
 
-Bu projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyin.
+Bu projeyi Windows için bir `setup.exe` dosyasına dönüştürmek için aşağıdaki adımları izleyin.
 
-### Gereksinimler
+### 1. Hazırlık ve Paketlerin Yüklenmesi
 
-*   [Node.js](https://nodejs.org/) (Sürüm 16 veya üzeri önerilir)
+Projeyi Electron uyumlu hale getirmek için gerekli paketleri yükleyin:
 
-### Adım Adım Kurulum
+```bash
+# Electron ve Builder araçlarını yükle
+npm install --save-dev electron electron-builder concurrently wait-on
+
+# Uygulama bağımlılıklarını yerel olarak yükle (ÖNEMLİ: İnternetsiz çalışması için)
+npm install react react-dom @google/genai react-markdown lucide-react mp4box
+```
+
+### 2. package.json Ayarları
+
+`package.json` dosyanızı açın ve aşağıdaki değişiklikleri yapın:
+
+1.  **"main"** alanını ekleyin.
+2.  **"scripts"** bölümüne `electron` komutlarını ekleyin.
+3.  **"build"** ayarlarını ekleyin.
+
+Örnek `package.json` yapısı şöyle olmalıdır:
+
+```json
+{
+  "name": "uskut",
+  "version": "1.0.0",
+  "main": "electron/main.js", 
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.uskut.app",
+    "productName": "Uskut",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.png" 
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+  // ... diğer bağımlılıklar
+}
+```
+
+### 3. Setup.exe Oluşturma
+
+Tüm ayarlar tamamsa, aşağıdaki komutu çalıştırarak `.exe` dosyasını oluşturun:
+
+```bash
+npm run electron:build
+```
+
+İşlem tamamlandığında projenizin içinde oluşan `release` klasöründe `Uskut Setup 1.0.0.exe` dosyasını bulabilirsiniz.
+
+---
+
+## 🌐 Web Sürümü Kurulumu
+
+Bu projeyi sadece tarayıcıda çalıştırmak isterseniz:
 
 1.  **Repoyu klonlayın:**
     ```bash
@@ -43,8 +106,6 @@ Bu projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımlar�
     npm run dev
     ```
 
-4.  Tarayıcınızda `http://localhost:5173` (veya terminalde belirtilen adres) adresine gidin.
-
 ## 📖 Kullanım Talimatları
 
 1.  **Video Yükleme:** İşlemek istediğiniz video dosyasını sürükleyip bırakın veya tıklayarak seçin.
@@ -56,22 +117,18 @@ Bu projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımlar�
 
 ### ⚠️ Premiere Pro'ya Aktarım (Önemli)
 
-Tarayıcı güvenlik kısıtlamaları nedeniyle, web uygulamaları bilgisayarınızdaki dosyanın tam yolunu (path) bilemez. Bu yüzden XML dosyasını Premiere Pro'ya attığınızda medya "Offline" görünecektir.
-
-Bunu düzeltmek için:
-1.  İndirdiğiniz XML dosyasını Premiere Pro'ya sürükleyin (Import).
-2.  Açılan pencerede dosyalar "Offline" görünecektir.
-3.  Dosyayı seçip **"Locate"** (Bul) butonuna basın.
-4.  Orijinal video dosyasını seçip **"OK"** deyin.
-5.  Premiere Pro kurguyu timeline'a otomatik yerleştirecektir.
+XML dosyasını Premiere Pro'ya attığınızda medya "Offline" görünecektir. Bunu düzeltmek için:
+1.  Dosyayı Premiere'e sürükleyin.
+2.  "Link Media" penceresinde **"Locate"** butonuna basın.
+3.  Orijinal video dosyasını seçin.
 
 ## 🛠 Teknolojiler
 
-*   [React](https://reactjs.org/) - UI Kütüphanesi
-*   [Vite](https://vitejs.dev/) - Build Aracı
-*   [Tailwind CSS](https://tailwindcss.com/) - Stil
-*   [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) - Ses İşleme
+*   [React](https://reactjs.org/)
+*   [Electron](https://www.electronjs.org/)
+*   [Vite](https://vitejs.dev/)
+*   [Tailwind CSS](https://tailwindcss.com/)
 
 ## 📄 Lisans
 
-Bu proje MIT lisansı ile lisanslanmıştır. Dilediğiniz gibi kullanabilir, değiştirebilir ve dağıtabilirsiniz.
+MIT lisansı ile lisanslanmıştır.
