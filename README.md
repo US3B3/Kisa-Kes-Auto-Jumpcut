@@ -1,134 +1,74 @@
-# ✂️ Uskut - Otomatik Sessizlik Giderici
+# ✂️ Kısa Kes - Otomatik Jump Cut
 
-**Uskut**, video dosyalarınızdaki sessiz bölümleri tarayıcı üzerinde analiz eden, bu bölümleri çıkartan ve **Adobe Premiere Pro**'ya aktarabileceğiniz bir XML dosyası üreten açık kaynaklı bir araçtır.
+**Kısa Kes**, video dosyalarınızdaki sessiz bölümleri analiz eden, bu bölümleri çıkartan ve **Adobe Premiere Pro**'ya aktarabileceğiniz bir XML dosyası üreten açık kaynaklı bir araçtır.
 
-Tüm işlem **istemci tarafında (tarayıcınızda)** gerçekleşir. Videolarınız herhangi bir sunucuya yüklenmez, bu sayede maksimum gizlilik ve hız sağlanır.
+Tüm işlem **bilgisayarınızda** gerçekleşir. Videolarınız herhangi bir sunucuya yüklenmez.
 
-![Uskut Ekran Görüntüsü](https://via.placeholder.com/800x450?text=Uskut+Arayuz+Onizleme)
+![Kısa Kes ekran görüntüsü](docs/ekran-goruntusu.png)
 
 ## 🌟 Özellikler
 
-*   **Tarayıcı Tabanlı Analiz:** Web Audio API kullanılarak videolar saniyeler içinde analiz edilir.
-*   **Gizlilik Odaklı:** Dosyalarınız bilgisayarınızdan dışarı çıkmaz.
+*   **Yerel Analiz:** Web Audio API ve WebCodecs ile çalışır; büyük MP4/MOV dosyaları belleğe yüklenmeden parça parça işlenir.
+*   **Tüm Kanallar:** Ses tek kanalda olsa bile (ör. yaka mikrofonu) konuşma kesilmez.
 *   **Hassas Ayarlar:**
     *   **Sessizlik Eşiği (dB):** Hangi ses seviyesinin altının sessizlik sayılacağını belirleyin.
-    *   **Minimum Süre:** Ne kadar süren sessizliklerin kesileceğini seçin.
-    *   **Güvenlik Payı (Padding):** Kesimlerin çok sert olmaması için konuşmaların başına ve sonuna pay bırakın.
-*   **Premiere Pro Uyumu:** Final Cut Pro XML formatında çıktı vererek Premiere Pro ile sorunsuz çalışır.
-*   **Modern Arayüz:** React, Tailwind CSS ve Lucide ikonları ile hazırlanmış şık tasarım.
+    *   **Min. Sessizlik Süresi:** Ne kadar süren sessizliklerin kesileceğini seçin.
+    *   **Pay (Padding):** Kesimlerin sert olmaması için konuşmaların başına ve sonuna pay bırakın.
+    *   **Min. Klip Süresi:** Tık, çıt gibi kısa ses patlamalarının ayrı klip olmasını engelleyin.
+*   **Premiere Pro Uyumu:** Kare hızı (23.976, 25, 29.97, 60...) MP4/MOV dosyalarından otomatik algılanır, gerekirse elle seçilir.
+*   **Masaüstü Sürümü:** XML'e dosyanın gerçek yolu yazılır, Premiere'de medyayı yeniden bağlamak gerekmez.
 
-## 🚀 Masaüstü Uygulaması Olarak Kurulum (.exe)
-
-Bu projeyi Windows için bir `setup.exe` dosyasına dönüştürmek için aşağıdaki adımları izleyin.
-
-### 1. Hazırlık ve Paketlerin Yüklenmesi
-
-Projeyi Electron uyumlu hale getirmek için gerekli paketleri yükleyin:
+## 🌐 Web Sürümü
 
 ```bash
-# Electron ve Builder araçlarını yükle
-npm install --save-dev electron electron-builder concurrently wait-on
-
-# Uygulama bağımlılıklarını yerel olarak yükle (ÖNEMLİ: İnternetsiz çalışması için)
-npm install react react-dom @google/genai react-markdown lucide-react mp4box
+git clone https://github.com/US3B3/Kisa-Kes-Auto-Jumpcut.git
+cd Kisa-Kes-Auto-Jumpcut
+npm install
+npm run dev
 ```
 
-### 2. package.json Ayarları
-
-`package.json` dosyanızı açın ve aşağıdaki değişiklikleri yapın:
-
-1.  **"main"** alanını ekleyin.
-2.  **"scripts"** bölümüne `electron` komutlarını ekleyin.
-3.  **"build"** ayarlarını ekleyin.
-
-Örnek `package.json` yapısı şöyle olmalıdır:
-
-```json
-{
-  "name": "uskut",
-  "version": "1.0.0",
-  "main": "electron/main.js", 
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "npm run build && electron-builder"
-  },
-  "build": {
-    "appId": "com.uskut.app",
-    "productName": "Uskut",
-    "directories": {
-      "output": "release"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "public/icon.png" 
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
-  }
-  // ... diğer bağımlılıklar
-}
-```
-
-### 3. Setup.exe Oluşturma
-
-Tüm ayarlar tamamsa, aşağıdaki komutu çalıştırarak `.exe` dosyasını oluşturun:
+## 🖥 Masaüstü Sürümü (Electron)
 
 ```bash
-npm run electron:build
+npm install
+npm run electron:dev     # geliştirme
+npm run electron:build   # kurulum dosyası (release/ klasörüne)
 ```
 
-İşlem tamamlandığında projenizin içinde oluşan `release` klasöründe `Uskut Setup 1.0.0.exe` dosyasını bulabilirsiniz.
+Windows'ta `Kısa Kes Setup 1.0.0.exe`, macOS'ta `.dmg` üretilir.
 
----
+> npm 11 kurulum betiklerini varsayılan olarak çalıştırmaz. `electron` çalışmazsa bir kez `node node_modules/electron/install.js` komutunu çalıştırın.
 
-## 🌐 Web Sürümü Kurulumu
+## 📖 Kullanım
 
-Bu projeyi sadece tarayıcıda çalıştırmak isterseniz:
-
-1.  **Repoyu klonlayın:**
-    ```bash
-    git clone https://github.com/kullaniciadi/uskut.git
-    cd uskut
-    ```
-
-2.  **Bağımlılıkları yükleyin:**
-    ```bash
-    npm install
-    ```
-
-3.  **Geliştirme sunucusunu başlatın:**
-    ```bash
-    npm run dev
-    ```
-
-## 📖 Kullanım Talimatları
-
-1.  **Video Yükleme:** İşlemek istediğiniz video dosyasını sürükleyip bırakın veya tıklayarak seçin.
+1.  **Video Yükleme:** Videoyu sürükleyip bırakın veya tıklayarak seçin.
 2.  **Ayarlar:**
     *   Gürültülü bir ortamda çekim yaptıysanız **Sessizlik Eşiği**ni artırın (örn. -20dB).
-    *   Konuşmaların kesilmemesi için **Padding** (Pay) değerini 0.1s - 0.2s civarında tutun.
-3.  **Analiz:** "Analiz Et" butonuna basın. İşlem süresi dosya boyutuna ve bilgisayarınızın hızına göre değişebilir.
-4.  **İndirme:** İşlem bittiğinde XML dosyasını indirin.
+    *   Konuşmaların kesilmemesi için **Pay** değerini 0.1s - 0.2s civarında tutun.
+    *   Kare hızının videonuzla aynı olduğundan emin olun, yoksa kesimler kayar.
+3.  **Analiz:** "Analiz Et" butonuna basın. Ayarları değiştirip "Yeniden Analiz Et" ile tekrar deneyebilirsiniz.
+4.  **İndirme:** XML dosyasını indirip Premiere Pro'ya sürükleyin.
 
-### ⚠️ Premiere Pro'ya Aktarım (Önemli)
+### ⚠️ Web Sürümünde Premiere'e Aktarım
 
-XML dosyasını Premiere Pro'ya attığınızda medya "Offline" görünecektir. Bunu düzeltmek için:
-1.  Dosyayı Premiere'e sürükleyin.
-2.  "Link Media" penceresinde **"Locate"** butonuna basın.
-3.  Orijinal video dosyasını seçin.
+Tarayıcı dosyanın konumunu bilemediği için medya "Offline" görünür:
+1.  "Link Media" penceresinde **"Locate"** butonuna basın.
+2.  Orijinal video dosyasını seçin.
+
+## 🧪 Test
+
+```bash
+npm test
+```
 
 ## 🛠 Teknolojiler
 
-*   [React](https://reactjs.org/)
+*   [React](https://react.dev/)
 *   [Electron](https://www.electronjs.org/)
 *   [Vite](https://vitejs.dev/)
 *   [Tailwind CSS](https://tailwindcss.com/)
+*   [MP4Box.js](https://github.com/gpac/mp4box.js)
 
 ## 📄 Lisans
 
-MIT lisansı ile lisanslanmıştır.
+[MIT](LICENSE)

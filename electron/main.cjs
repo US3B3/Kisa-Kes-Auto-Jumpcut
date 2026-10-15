@@ -9,14 +9,15 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
     height: 900,
-    title: "Uskut",
+    title: "Kısa Kes",
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false, // WebCodecs ve File API uyumu için
-      webSecurity: true 
+      // Renderer'a Node erişimi verilmez; sadece preload'daki dosya yolu fonksiyonu açılır
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
     },
-    autoHideMenuBar: true, // Menü çubuğunu gizle
-    icon: path.join(__dirname, '../public/icon.png') // İkon varsa kullanılır
+    autoHideMenuBar: true // Menü çubuğunu gizle
   });
 
   // Harici linkleri varsayılan tarayıcıda aç
