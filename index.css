@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 body {
-  /* İnternet yoksa Inter yüklenmez, sistem fontuna düşer */
-  font-family: 'Inter', system-ui, sans-serif;
+  /* Uzaktan font yüklenmez: Premiere paneli eski Chromium + Node ile çalışıyor */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   background-color: #0f172a;
   color: #e2e8f0;
 }

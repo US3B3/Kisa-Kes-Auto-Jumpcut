@@ -14,7 +14,11 @@
     "preview": "vite preview",
     "test": "node --test \"tests/*.test.ts\"",
     "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "premiere:build": "vite build --mode premiere",
+    "premiere:install": "npm run premiere:build && node scripts/install-premiere.cjs",
+    "premiere:zxp": "npm run premiere:build && node scripts/build-zxp.cjs",
+    "premiere:zip": "npm run premiere:build && cd premiere && rm -f ../release/Kisa-Kes-Premiere.zip && mkdir -p ../release && zip -qr ../release/Kisa-Kes-Premiere.zip CSXS jsx panel install"
   },
   "dependencies": {
     "lucide-react": "^0.563.0",
@@ -31,6 +35,7 @@
     "concurrently": "^10.0.6",
     "electron": "^44.7.2",
     "electron-builder": "^26.15.3",
+    "lightningcss": "^1.33.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~5.8.2",
     "vite": "^7.3.1",
@@ -46,11 +51,22 @@
     "directories": {
       "output": "release"
     },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableCookieEncryption": true,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "resetAdHocDarwinSignature": true
+    },
     "win": {
-      "target": "nsis"
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "Kisa-Kes-Setup-${version}.${ext}"
     },
     "mac": {
-      "target": "dmg"
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "artifactName": "Kisa-Kes-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,

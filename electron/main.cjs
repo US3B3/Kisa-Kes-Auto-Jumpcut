@@ -20,11 +20,14 @@ function createWindow() {
     autoHideMenuBar: true // Menü çubuğunu gizle
   });
 
-  // Harici linkleri varsayılan tarayıcıda aç
+  // Harici linkleri varsayılan tarayıcıda aç; file://, smb:// gibi şemalar işletim sistemine verilmez
   win.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    if (url.startsWith('https://')) shell.openExternal(url);
     return { action: 'deny' };
   });
+
+  // Pencere uygulamadan başka sayfaya geçemez (ör. bırakma alanı dışına sürüklenen dosya)
+  win.webContents.on('will-navigate', (event) => event.preventDefault());
 
   if (isDev) {
     // Geliştirme modunda localhost'tan yükle

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Sliders, Scissors, Download, AlertCircle, PlayCircle, Loader2, Monitor, Film } from 'lucide-react';
+import { Sliders, Scissors, Download, AlertCircle, PlayCircle, Loader2, Monitor, Film, MousePointerClick, ListPlus, CheckCircle2 } from 'lucide-react';
 import DropZone from './components/DropZone';
 import { extractAudioAndDetectSilence } from './services/audioService';
 import { generateFcpXml } from './services/xmlService';
 import { getMediaInfo, STANDARD_FPS } from './services/mediaHelpers';
-import { ProcessingStatus, AnalysisResult, MediaInfo } from './types';
+import { getSelectedClip, importSequenceXml, isPremiere } from './services/premiereService';
+import { ProcessingStatus, AnalysisResult, MediaFile, MediaInfo } from './types';
 
 // Standart Çözünürlük Seçenekleri
 const RESOLUTION_OPTIONS = [
@@ -17,9 +18,10 @@ const RESOLUTION_OPTIONS = [
 
 const DEFAULT_MEDIA_INFO: MediaInfo = { width: 1920, height: 1080 };
 const FALLBACK_FPS = 30;
+const IN_PREMIERE = isPremiere();
 
 const App: React.FC = () => {
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<MediaFile | null>(null);
   const [status, setStatus] = useState<ProcessingStatus>(ProcessingStatus.IDLE);
   const [progressMsg, setProgressMsg] = useState<string>('');
   const [progressPercent, setProgressPercent] = useState<number>(0);
@@ -35,12 +37,14 @@ const App: React.FC = () => {
   const [selectedResMode, setSelectedResMode] = useState<string>('auto');
   const [selectedFps, setSelectedFps] = useState<string>('auto');
   const [mediaInfo, setMediaInfo] = useState<MediaInfo>(DEFAULT_MEDIA_INFO);
+  const [premiereMsg, setPremiereMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const isProcessing = status === ProcessingStatus.EXTRACTING_AUDIO;
   const isDesktop = !!window.kisaKes;
 
-  const handleFileSelect = async (selectedFile: File) => {
+  const handleFileSelect = async (selectedFile: MediaFile) => {
     setFile(selectedFile);
+    setPremiereMsg(null);
     setStatus(ProcessingStatus.IDLE);
     setResult(null);
     setProgressPercent(0);
@@ -55,12 +59,23 @@ const App: React.FC = () => {
     }
   };
 
+  const handlePickFromPremiere = async () => {
+    try {
+      await handleFileSelect(await getSelectedClip());
+    } catch (error) {
+      setFile(null);
+      setStatus(ProcessingStatus.ERROR);
+      setProgressMsg(error instanceof Error ? error.message : String(error));
+    }
+  };
+
   const handleProcess = async () => {
     if (!file) return;
 
     try {
       setStatus(ProcessingStatus.EXTRACTING_AUDIO);
       setResult(null);
+      setPremiereMsg(null);
       setProgressPercent(0);
       setProgressMsg('');
 
@@ -108,20 +123,35 @@ const App: React.FC = () => {
     }
   };
 
+  const buildXml = (result: AnalysisResult, file: MediaFile) =>
+    generateFcpXml(file.name, result.segments, result.resolution, {
+      fps: result.fps,
+      channelCount: result.channelCount,
+      filePath: file instanceof Blob ? window.kisaKes?.getPathForFile(file) || undefined : file.path,
+      sourceDuration: result.originalDuration,
+    });
+
+  const baseName = (file: MediaFile) => file.name.replace(/\.[^.]+$/, '');
+
+  const handleImportToPremiere = async () => {
+    if (!result || !file) return;
+    try {
+      await importSequenceXml(buildXml(result, file), baseName(file));
+      setPremiereMsg({ ok: true, text: 'Kesilmiş sekans projeye eklendi ve açıldı.' });
+    } catch (error) {
+      setPremiereMsg({ ok: false, text: error instanceof Error ? error.message : String(error) });
+    }
+  };
+
   const handleDownloadXml = () => {
     if (!result || !file) return;
 
-    const xmlContent = generateFcpXml(file.name, result.segments, result.resolution, {
-      fps: result.fps,
-      channelCount: result.channelCount,
-      filePath: window.kisaKes?.getPathForFile(file) || undefined,
-      sourceDuration: result.originalDuration,
-    });
+    const xmlContent = buildXml(result, file);
     const blob = new Blob([xmlContent], { type: 'text/xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${file.name.replace(/\.[^.]+$/, '')}_kisa_kes.xml`;
+    a.download = `${baseName(file)}_kisa_kes.xml`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -134,15 +164,18 @@ const App: React.FC = () => {
 
         {/* Başlık */}
         <header className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center p-3 bg-cyan-500/10 rounded-2xl mb-2">
-            <Scissors className="text-cyan-400 w-10 h-10" />
-          </div>
+          {!IN_PREMIERE && (
+            <div className="inline-flex items-center justify-center p-3 bg-cyan-500/10 rounded-2xl mb-2">
+              <Scissors className="text-cyan-400 w-10 h-10" />
+            </div>
+          )}
           <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
             Kısa Kes
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-            Videolarınızdaki sessiz bölümleri otomatik olarak tespit edin ve çıkarın.
-            Premiere Pro için hazır XML çıktısı alın.
+            {IN_PREMIERE
+              ? 'Bir klip seçin, sessiz bölümleri kesilmiş halini yeni sekans olarak ekleyin.'
+              : 'Videolarınızdaki sessiz bölümleri otomatik olarak tespit edin ve çıkarın. Premiere Pro için hazır XML çıktısı alın.'}
           </p>
         </header>
 
@@ -278,7 +311,18 @@ const App: React.FC = () => {
 
           {/* Sağ Kolon: Yükleme ve İşlem */}
           <div className="md:col-span-2 space-y-6">
-            <DropZone onFileSelected={handleFileSelect} disabled={isProcessing} />
+            {IN_PREMIERE ? (
+              <button
+                onClick={handlePickFromPremiere}
+                disabled={isProcessing}
+                className="w-full py-4 border-2 border-dashed border-gray-600 hover:border-cyan-500 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl flex items-center justify-center gap-2 text-white font-semibold transition-all"
+              >
+                <MousePointerClick size={20} className="text-cyan-400" />
+                Premiere'de Seçili Klibi Al
+              </button>
+            ) : (
+              <DropZone onFileSelected={handleFileSelect} disabled={isProcessing} />
+            )}
 
             {file && (
               <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700 flex items-center justify-between">
@@ -364,19 +408,37 @@ const App: React.FC = () => {
                     Çıktı Formatı: {result.resolution.width}x{result.resolution.height} • {result.fps} fps • {result.channelCount} ses kanalı
                 </div>
 
-                {!isDesktop && (
+                {!isDesktop && !IN_PREMIERE && (
                   <div className="p-4 bg-yellow-900/10 border border-yellow-800/30 rounded-lg text-sm text-yellow-200/80">
                     <strong>Önemli:</strong> Tarayıcı sürümü dosyanın konumunu bilemez. XML'i Premiere Pro'ya aktardığınızda medyayı manuel olarak yeniden bağlamanız (Link Media) gerekecektir. Masaüstü sürümünde bu adım gerekmez.
                   </div>
                 )}
 
-                <button
-                  onClick={handleDownloadXml}
-                  className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1"
-                >
-                  <Download size={24} />
-                  Premiere Pro XML İndir
-                </button>
+                {IN_PREMIERE ? (
+                  <>
+                    <button
+                      onClick={handleImportToPremiere}
+                      className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1"
+                    >
+                      <ListPlus size={24} />
+                      Sekans Olarak Ekle
+                    </button>
+                    {premiereMsg && (
+                      <p className={`text-sm flex items-center gap-2 ${premiereMsg.ok ? 'text-green-400' : 'text-red-300'}`}>
+                        {premiereMsg.ok ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                        {premiereMsg.text}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={handleDownloadXml}
+                    className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1"
+                  >
+                    <Download size={24} />
+                    Premiere Pro XML İndir
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -25,3 +25,9 @@ dist-ssr
 
 # Electron build
 release
+
+# Premiere panel build
+premiere/panel
+
+# ZXPSignCmd (Adobe aracı, repoya girmez)
+.tools

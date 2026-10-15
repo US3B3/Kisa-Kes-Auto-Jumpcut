@@ -1,4 +1,4 @@
-import type { AudioAnalysis, ProcessingSettings } from '../types';
+import type { AudioAnalysis, MediaFile, ProcessingSettings } from '../types';
 // @ts-ignore
 import * as MP4Box from 'mp4box';
 import { isMp4Compatible } from './mediaHelpers';
@@ -8,7 +8,7 @@ import { analyzeVolumeTimeline, calculateRMS, createVolumeTimeline, type VolumeP
 const LARGE_FILE_THRESHOLD = 200 * 1024 * 1024;
 
 export const extractAudioAndDetectSilence = async (
-  file: File,
+  file: MediaFile,
   settings: ProcessingSettings,
   onProgress: (msg: string) => void,
   onLoadProgress?: (percent: number) => void
@@ -50,7 +50,7 @@ export const extractAudioAndDetectSilence = async (
 
 // --- YÖNTEM 1: KLASİK (Belleğe Yüklemeli) ---
 const processSmallFile = async (
-  file: File,
+  file: MediaFile,
   settings: ProcessingSettings,
   onProgress: (msg: string) => void,
   onLoadProgress?: (percent: number) => void
@@ -85,7 +85,7 @@ const processSmallFile = async (
 
 // --- YÖNTEM 2: STREAMING (Büyük Dosyalar İçin) ---
 const processLargeVideoFile = async (
-  file: File,
+  file: MediaFile,
   settings: ProcessingSettings,
   onProgress: (msg: string) => void,
   onLoadProgress?: (percent: number) => void
@@ -291,9 +291,10 @@ export const buildAacLcConfig = (sampleRate: number, channels: number): Uint8Arr
 };
 
 const readFileAsArrayBuffer = (
-  file: File,
+  file: MediaFile,
   onProgress?: (percent: number) => void
 ): Promise<ArrayBuffer> => {
+  if (!(file instanceof Blob)) return file.arrayBuffer(); // Premiere'de diskten okunur, ilerleme yok
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as ArrayBuffer);

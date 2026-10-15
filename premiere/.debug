@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionList>
+  <!-- Geliştirme için: panel açıkken Chrome'da http://localhost:8099 ile hata ayıklanır -->
+  <Extension Id="com.kisakes.panel.main">
+    <HostList>
+      <Host Name="PPRO" Port="8099" />
+    </HostList>
+  </Extension>
+</ExtensionList>

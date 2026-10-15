@@ -1,19 +1,19 @@
 // @ts-ignore
 import * as MP4Box from 'mp4box';
-import type { MediaInfo } from '../types';
+import type { MediaFile, MediaInfo } from '../types';
 
 export const STANDARD_FPS = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60];
 
 const DEFAULT_RESOLUTION = { width: 1920, height: 1080 };
 
-export const isMp4Compatible = (file: File) =>
+export const isMp4Compatible = (file: MediaFile) =>
   /\.(mp4|mov|m4a|m4v)$/i.test(file.name) || file.type.includes('mp4') || file.type.includes('quicktime');
 
 // Değişken kare hızlı (telefon) videolar için en yakın standart değere yuvarlar
 const snapFps = (fps: number) =>
   STANDARD_FPS.reduce((best, f) => (Math.abs(f - fps) < Math.abs(best - fps) ? f : best));
 
-const detectFps = async (file: File): Promise<number | undefined> => {
+const detectFps = async (file: MediaFile): Promise<number | undefined> => {
   if (!isMp4Compatible(file)) return undefined;
 
   const mp4 = MP4Box.createFile();
@@ -39,7 +39,7 @@ const detectFps = async (file: File): Promise<number | undefined> => {
   return fps;
 };
 
-const readVideoMetadata = (file: File): Promise<Omit<MediaInfo, 'fps'>> => {
+const readVideoMetadata = (file: MediaFile): Promise<Omit<MediaInfo, 'fps'>> => {
   return new Promise((resolve) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
@@ -60,11 +60,11 @@ const readVideoMetadata = (file: File): Promise<Omit<MediaInfo, 'fps'>> => {
       resolve(DEFAULT_RESOLUTION); // Hata durumunda varsayılan
     };
 
-    video.src = URL.createObjectURL(file);
+    video.src = file instanceof Blob ? URL.createObjectURL(file) : file.url;
   });
 };
 
-export const getMediaInfo = async (file: File): Promise<MediaInfo> => {
+export const getMediaInfo = async (file: MediaFile): Promise<MediaInfo> => {
   const [metadata, fps] = await Promise.all([
     readVideoMetadata(file),
     detectFps(file).catch(() => undefined),

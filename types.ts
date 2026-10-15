@@ -45,9 +45,25 @@ export interface AnalysisResult {
   channelCount: number;
 }
 
+// Premiere eklentisinde diskteki dosyayı belleğe almadan File gibi okur (Node fs ile)
+export interface LocalFile {
+  name: string;
+  size: number;
+  type: string;
+  path: string;
+  url: string;
+  slice(start?: number, end?: number): { arrayBuffer(): Promise<ArrayBuffer> };
+  arrayBuffer(): Promise<ArrayBuffer>;
+  stream(): ReadableStream<Uint8Array>;
+}
+
+export type MediaFile = File | LocalFile;
+
 declare global {
   interface Window {
     // electron/preload.cjs tarafından eklenir; tarayıcıda yoktur
     kisaKes?: { getPathForFile(file: File): string };
+    // Premiere CEP paneli içinde eklenir
+    __adobe_cep__?: { evalScript(script: string, callback: (result: string) => void): void };
   }
 }
